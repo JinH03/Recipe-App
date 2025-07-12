@@ -1,15 +1,17 @@
+# Android Studio
+.idea/
 *.iml
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-/captures
-.externalNativeBuild
-.cxx
+.gradle/
 local.properties
+
+# Build output
+/build/
+.cxx/
+captures/
+
+# Mac, Windows 시스템 파일
+.DS_Store
+Thumbs.db
+
+# 기타
+*.log
