@@ -1,17 +1,16 @@
-# Android Studio
+# Android Studio specific
 .idea/
 *.iml
-.gradle/
-local.properties
 
-# Build output
-/build/
+# Gradle
+.gradle/
+build/
 .cxx/
 captures/
 
-# Mac, Windows 시스템 파일
+# Local properties
+local.properties
+
+# OS 관련
 .DS_Store
 Thumbs.db
-
-# 기타
-*.log
