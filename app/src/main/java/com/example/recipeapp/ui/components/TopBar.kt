@@ -67,7 +67,7 @@ fun TopBar(navController: NavController) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
                     contentDescription = "잠금"
-                )
+                )//뭐임이거?
             }
 
             IconButton(onClick = {

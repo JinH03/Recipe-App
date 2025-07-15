@@ -104,7 +104,7 @@ fun IngredientsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // 필터 설정 버튼
+            // 필터 설정
             Button(onClick = { showFilterDialog = true }) {
                 Text("필터⚙️")
             }
