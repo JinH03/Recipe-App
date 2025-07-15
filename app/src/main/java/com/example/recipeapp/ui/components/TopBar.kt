@@ -35,7 +35,7 @@ fun TopBar(navController: NavController) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = {
-                // 즐겨찾기 페이지가 있다면 navController.navigate(...) 추가
+                navController.navigate(Screen.Favorites.route)
             }) {
                 Icon(
                     imageVector = Icons.Filled.Star,
