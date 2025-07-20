@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
@@ -62,16 +62,16 @@ fun TopBar(navController: NavController) {
             }
 
             IconButton(onClick = {
-                // 잠금 관련 기능이 있다면 여기에 연결
+                navController.navigate(Screen.Fridge.route)
             }) {
                 Icon(
-                    imageVector = Icons.Filled.Lock,
-                    contentDescription = "잠금"
-                )//뭐임이거?
+                    imageVector = Icons.Filled.Kitchen,
+                    contentDescription = "냉장고"
+                )
             }
 
             IconButton(onClick = {
-                // 장바구니 페이지가 있다면 navController.navigate(...) 추가
+                navController.navigate(Screen.Shopping.route)
             }) {
                 Icon(
                     imageVector = Icons.Filled.ShoppingCart,
