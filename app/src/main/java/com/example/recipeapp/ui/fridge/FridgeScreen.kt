@@ -57,7 +57,7 @@ fun FridgeScreen(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { /* TODO: 재료 추가 화면 이동 */ }) {
+            Button(onClick = { /* TODO: 재료 추가 화면 이동 만들것*/ }) {
                 Text("재료 추가")
             }
             Button(onClick = { navController.navigate("shopping") }) {
