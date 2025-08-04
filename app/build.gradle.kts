@@ -57,7 +57,6 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.androidx.navigation.compose)
-    implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
-    implementation("androidx.compose.material3:material3:1.2.0")
+    implementation(libs.accompanist.flowlayout)
 
 }
