@@ -1,0 +1,16 @@
+# Android Studio specific
+.idea/
+*.iml
+
+# Gradle
+.gradle/
+build/
+.cxx/
+captures/
+
+# Local properties
+local.properties
+
+# OS 관련
+.DS_Store
+Thumbs.db
