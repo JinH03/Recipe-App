@@ -1,5 +1,5 @@
 package com.example.recipeapp.data
-
+/*샘플*/
 object RecipeSamples {
     val sampleRecipes = listOf(
         Recipe(
