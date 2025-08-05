@@ -38,11 +38,6 @@ fun RecipeNavGraph(
 
         composable(Screen.Ingredients.route) {
             IngredientsScreen(
-                onNext        = { ingredientsList ->
-                    // 요리 추천 로직
-                    println("입력된 재료들: $ingredientsList")
-                    // 예: navController.navigate(Screen.Recommendations.route)
-                },
                 navController = navController
             )
         }
