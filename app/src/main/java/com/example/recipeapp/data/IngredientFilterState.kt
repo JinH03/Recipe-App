@@ -1,5 +1,5 @@
 package com.example.recipeapp.data
-/*필터 상태 적용 하기위함*/
+/*필터 상태 적용 하기위함임*/
 data class IngredientFilterState(
     val selectedIngredients: List<String>,
     val useOnlyFridge: Boolean,

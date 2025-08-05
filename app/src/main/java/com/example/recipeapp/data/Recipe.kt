@@ -1,5 +1,5 @@
 package com.example.recipeapp.data
-/*레시피 클래스 구조*/
+/*레시피 클래스 구조임*/
 data class Recipe(
     val id: Int,
     val title: String,
