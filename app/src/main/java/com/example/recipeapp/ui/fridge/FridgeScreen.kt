@@ -17,29 +17,26 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import androidx.room.Room
+import com.example.recipeapp.data.AppDatabase
+import com.example.recipeapp.data.IngredientRepository
+import com.example.recipeapp.model.Ingredient
 import com.example.recipeapp.ui.components.TopBar
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.mutableIntStateOf
-data class Ingredient(
-    val name: String,
-    val count: MutableState<Int>,
-    val expiry: String,
-    val memo: String = ""
-)
-
+import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
-fun FridgeScreen(navController: NavHostController) {
-    var showDialog by remember { mutableStateOf(false) }
-    val ingredients = remember { mutableStateListOf<Ingredient>() }
+fun FridgeScreen(
+    navController: NavHostController,
+    viewModel: FridgeViewModel
+) {
     val sdf = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    val ingredients by viewModel.ingredients.collectAsState()
 
     val sortedIngredients = remember(ingredients) {
-        derivedStateOf {
-            ingredients.sortedBy {
-                sdf.parse(it.expiry)
-            }
-        }
+        ingredients.sortedBy { sdf.parse(it.expiry) }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -52,7 +49,7 @@ fun FridgeScreen(navController: NavHostController) {
         )
 
         LazyColumn(modifier = Modifier.weight(1f)) {
-            items(sortedIngredients.value) { ingredient ->
+            items(sortedIngredients) { ingredient ->
                 val today = Calendar.getInstance().time
                 val expiryDate = try {
                     sdf.parse(ingredient.expiry)
@@ -102,10 +99,8 @@ fun FridgeScreen(navController: NavHostController) {
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     IconButton(onClick = {
-                                        if (ingredient.count.value > 1) {
-                                            ingredient.count.value--
-                                            tempCountText = ingredient.count.value.toString()
-                                        }
+                                        viewModel.decreaseCount(ingredient)
+                                        tempCountText = ingredient.count.value.toString()
                                     }) {
                                         Icon(Icons.Default.Remove, contentDescription = "감소")
                                     }
@@ -123,7 +118,7 @@ fun FridgeScreen(navController: NavHostController) {
                                         IconButton(onClick = {
                                             val newValue = tempCountText.toIntOrNull()
                                             if (newValue != null && newValue > 0) {
-                                                ingredient.count.value = newValue
+                                                viewModel.updateIngredientCount(ingredient, newValue)
                                             }
                                             isEditingCount = false
                                         }) {
@@ -140,7 +135,7 @@ fun FridgeScreen(navController: NavHostController) {
                                     }
 
                                     IconButton(onClick = {
-                                        ingredient.count.value++
+                                        viewModel.increaseCount(ingredient)
                                         tempCountText = ingredient.count.value.toString()
                                     }) {
                                         Icon(Icons.Default.Add, contentDescription = "증가")
@@ -156,7 +151,7 @@ fun FridgeScreen(navController: NavHostController) {
                         }
 
                         IconButton(
-                            onClick = { ingredients.remove(ingredient) },
+                            onClick = { viewModel.removeIngredient(ingredient) },
                             modifier = Modifier.align(Alignment.TopEnd)
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = "삭제")
@@ -184,115 +179,10 @@ fun FridgeScreen(navController: NavHostController) {
             AddIngredientDialog(
                 onDismiss = { showDialog = false },
                 onAdd = { name, count, expiry, memo ->
-                    ingredients.add(Ingredient(name, mutableIntStateOf(count), expiry, memo))
+                    viewModel.addIngredient(name, count, expiry, memo)
                     showDialog = false
                 }
             )
         }
     }
-}
-/*TODO*/
-@Composable
-fun AddIngredientDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String, Int, String, String) -> Unit
-) {
-    var name by remember { mutableStateOf("") }
-    var countText by remember { mutableStateOf("1") }
-    var year by remember { mutableStateOf("") }
-    var month by remember { mutableStateOf("") }
-    var day by remember { mutableStateOf("") }
-    var memo by remember { mutableStateOf("") }
-
-    val context = LocalContext.current
-    var showErrors by remember { mutableStateOf(false) }
-
-    val count = countText.toIntOrNull() ?: 1
-    val expiry = "${year.padStart(4, '0')}-${month.padStart(2, '0')}-${day.padStart(2, '0')}"
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("재료 추가")
-                IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "닫기")
-                }
-            }
-        },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it; showErrors = false },
-                    label = { Text("재료 이름") },
-                    isError = showErrors && name.isBlank()
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-
-                OutlinedTextField(
-                    value = countText,
-                    onValueChange = { countText = it.filter { c -> c.isDigit() } },
-                    label = { Text("수량") },
-                    modifier = Modifier.width(100.dp)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("유통기한 (yyyy-MM-dd)", style = MaterialTheme.typography.labelMedium)
-                Row {
-                    OutlinedTextField(
-                        value = year,
-                        onValueChange = { year = it.filter { c -> c.isDigit() } },
-                        label = { Text("년") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = month,
-                        onValueChange = { month = it.filter { c -> c.isDigit() } },
-                        label = { Text("월") },
-                        modifier = Modifier.weight(1f)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    OutlinedTextField(
-                        value = day,
-                        onValueChange = { day = it.filter { c -> c.isDigit() } },
-                        label = { Text("일") },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = memo,
-                    onValueChange = { memo = it },
-                    label = { Text("메모 (선택)") }
-                )
-            }
-        },
-        confirmButton = {
-            Button(onClick = {
-                val isValidDate = try {
-                    SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(expiry)
-                    true
-                } catch (_: Exception) {
-                    false
-                }
-
-                if (name.isBlank() || !isValidDate) {
-                    showErrors = true
-                    Toast.makeText(context, "입력값을 확인하세요", Toast.LENGTH_SHORT).show()
-                } else {
-                    onAdd(name.trim(), count, expiry, memo.trim())
-                }
-            }) {
-                Text("추가")
-            }
-        },
-        dismissButton = {
-            OutlinedButton(onClick = onDismiss) {
-                Text("취소")
-            }
-        }
-    )
 }

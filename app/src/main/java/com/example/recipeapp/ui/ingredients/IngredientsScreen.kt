@@ -1,6 +1,8 @@
 package com.example.recipeapp.ui.ingredients
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -15,20 +17,30 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.recipeapp.ui.components.TopBar
 import com.example.recipeapp.data.DefaultIngredientSamples
-import com.google.accompanist.flowlayout.FlowRow
+import com.example.recipeapp.ui.fridge.FridgeViewModel
+import com.google.accompanist.flowlayout.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngredientsScreen(
     onNext: (List<String>) -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    fridgeViewModel: FridgeViewModel
 ) {
     val allIngredients = DefaultIngredientSamples
 
     var input by remember { mutableStateOf("") }
     var ingredients by remember { mutableStateOf(listOf<String>()) }
+    val fridgeIngredients by fridgeViewModel.ingredients.collectAsState()
+    LaunchedEffect(fridgeIngredients) {
+        println("fridgeIngredients: $fridgeIngredients")
+    }
 
     var showFilterDialog by remember { mutableStateOf(false) }
+    var showFridgeDialog by remember { mutableStateOf(false) }
+    var selectedIngredients by remember { mutableStateOf(setOf<String>()) }
+    var allSelected by remember { mutableStateOf(false) }
+
     val allergyOptions = listOf("계란", "우유", "갑각류", "땅콩", "밀", "생선")
     var selectedAllergies by remember { mutableStateOf(setOf<String>()) }
     var vegetarianOnly by remember { mutableStateOf(false) }
@@ -63,14 +75,13 @@ fun IngredientsScreen(
                             expanded = true
                         },
                         label = { Text("재료를 입력하세요") },
-                        trailingIcon = {}, // ← 화살표 없애기
+                        trailingIcon = {},
                         modifier = Modifier
                             .menuAnchor()
                             .weight(1f),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
                     )
-
 
                     ExposedDropdownMenu(
                         expanded = expanded && suggestions.isNotEmpty(),
@@ -115,7 +126,7 @@ fun IngredientsScreen(
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 mainAxisSpacing = 8.dp,
-                crossAxisSpacing = 8.dp
+                crossAxisSpacing = 8.dp,
             ) {
                 ingredients.forEach { item ->
                     Surface(
@@ -148,8 +159,18 @@ fun IngredientsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(onClick = { showFilterDialog = true }) {
-                Text("필터⚙️")
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(onClick = { showFilterDialog = true }) {
+                    Text("필터⚙️")
+                }
+                Button(
+                    onClick = { showFridgeDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4B5B9F))
+                ) {
+                    Text("내 냉장고 재료 추가")
+                }
             }
 
             if (selectedAllergies.isNotEmpty() || vegetarianOnly) {
@@ -159,12 +180,12 @@ fun IngredientsScreen(
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                     mainAxisSpacing = 8.dp,
-                    crossAxisSpacing = 8.dp
+                    crossAxisSpacing = 8.dp,
                 ) {
                     selectedAllergies.forEach { allergy ->
                         FilterChip(
                             selected = true,
-                            onClick = { },
+                            onClick = {},
                             label = { Text(allergy, color = Color.White) },
                             colors = FilterChipDefaults.filterChipColors(
                                 containerColor = Color(0xFFFF5500),
@@ -177,7 +198,7 @@ fun IngredientsScreen(
                     if (vegetarianOnly) {
                         FilterChip(
                             selected = true,
-                            onClick = { },
+                            onClick = {},
                             label = { Text("채식만 보기", color = Color.White) },
                             colors = FilterChipDefaults.filterChipColors(
                                 containerColor = Color(0xFFFF5500),
@@ -235,57 +256,165 @@ fun IngredientsScreen(
     }
 
     if (showFilterDialog) {
-        AlertDialog(
-            onDismissRequest = { showFilterDialog = false },
-            title = { Text("필터 설정") },
-            text = {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text("알러지 항목 선택")
-                    allergyOptions.forEach { option ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                        ) {
-                            Checkbox(
-                                checked = selectedAllergies.contains(option),
-                                onCheckedChange = { checked ->
-                                    selectedAllergies = if (checked)
-                                        selectedAllergies + option
-                                    else
-                                        selectedAllergies - option
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(option)
-                        }
-                    }
+        FilterDialog(
+            selectedAllergies = selectedAllergies,
+            onAllergyChange = { allergy, checked ->
+                selectedAllergies = if (checked) {
+                    selectedAllergies + allergy
+                } else {
+                    selectedAllergies - allergy
+                }
+            },
+            vegetarianOnly = vegetarianOnly,
+            onVegetarianChange = { vegetarianOnly = it },
+            onDismiss = { showFilterDialog = false },
+            onConfirm = {
+                showFilterDialog = false
+            }
+        )
+    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+    if (showFridgeDialog) {
+        FridgeIngredientsDialog(
+            fridgeIngredients = fridgeIngredients,
+            onDismiss = { showFridgeDialog = false },
+            onConfirm = { selectedList ->
+                ingredients = ingredients + selectedList.filterNot { ingredients.contains(it) }
+            }
+        )
+    }
+}
 
+@Composable
+fun FilterDialog(
+    selectedAllergies: Set<String>,
+    onAllergyChange: (String, Boolean) -> Unit,
+    vegetarianOnly: Boolean,
+    onVegetarianChange: (Boolean) -> Unit,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("필터 설정") },
+        text = {
+            Column {
+                val allergyOptions = listOf("계란", "우유", "갑각류", "땅콩", "밀", "생선")
+                allergyOptions.forEach { allergy ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("채식만 보기", modifier = Modifier.weight(1f))
-                        Switch(
-                            checked = vegetarianOnly,
-                            onCheckedChange = { vegetarianOnly = it }
+                        val checked = selectedAllergies.contains(allergy)
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = { checked ->
+                                onAllergyChange(allergy, checked)
+                            }
                         )
+                        Text(allergy)
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showFilterDialog = false }) {
-                    Text("적용")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showFilterDialog = false }) {
-                    Text("취소")
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = vegetarianOnly,
+                        onCheckedChange = onVegetarianChange
+                    )
+                    Text("채식만 보기")
                 }
             }
-        )
-    }
+        },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("확인")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
+}
+
+@Composable
+fun FridgeIngredientsDialog(
+    fridgeIngredients: List<com.example.recipeapp.model.Ingredient>,
+    onDismiss: () -> Unit,
+    onConfirm: (List<String>) -> Unit
+) {
+    var selectedIngredients by remember { mutableStateOf(setOf<String>()) }
+    var allSelected by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("내 냉장고 재료 선택") },
+        text = {
+            Column(
+                modifier = Modifier
+                    .height(300.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Checkbox(
+                        checked = allSelected,
+                        onCheckedChange = { checked ->
+                            allSelected = checked
+                            selectedIngredients = if (checked) {
+                                fridgeIngredients.map { it.name }.toSet()
+                            } else {
+                                emptySet()
+                            }
+                        }
+                    )
+                    Text("전체 선택")
+                }
+
+                fridgeIngredients.forEach { ingredient ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        val checked = selectedIngredients.contains(ingredient.name)
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = { checked ->
+                                selectedIngredients = if (checked) {
+                                    selectedIngredients + ingredient.name
+                                } else {
+                                    selectedIngredients - ingredient.name
+                                }
+                                allSelected = selectedIngredients.size == fridgeIngredients.size
+                            }
+                        )
+                        Text(ingredient.name)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(selectedIngredients.toList())
+                    onDismiss()
+                }
+            ) {
+                Text("추가")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("취소")
+            }
+        }
+    )
 }

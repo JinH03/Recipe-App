@@ -10,6 +10,7 @@ import com.example.recipeapp.ui.ingredients.IngredientsScreen
 import com.example.recipeapp.ui.favorites.FavoritesScreen
 import com.example.recipeapp.ui.shopping.ShoppingScreen
 import com.example.recipeapp.ui.fridge.FridgeScreen
+import com.example.recipeapp.ui.fridge.FridgeViewModel
 
 sealed class Screen(val route: String) {
     object Home        : Screen("home")
@@ -18,13 +19,13 @@ sealed class Screen(val route: String) {
     object Shopping    : Screen("shopping")       // ← Screen("shopping") 형태로 수정
     object Fridge    : Screen("fridge")
 }
-
 @Composable
 fun RecipeNavGraph(
-    navController: NavHostController
+    navController: NavHostController,
+    fridgeViewModel: FridgeViewModel
 ) {
     NavHost(
-        navController    = navController,
+        navController = navController,
         startDestination = Screen.Home.route
     ) {
         composable(Screen.Home.route) {
@@ -38,28 +39,27 @@ fun RecipeNavGraph(
 
         composable(Screen.Ingredients.route) {
             IngredientsScreen(
-                navController = navController
+                onNext = { ingredientsList ->
+                    println("입력된 재료들: $ingredientsList")
+                },
+                navController = navController,
+                fridgeViewModel = fridgeViewModel // 전달해줌
             )
         }
 
         composable(Screen.Favorites.route) {
-            FavoritesScreen(
-                navController = navController
-            )
+            FavoritesScreen(navController = navController)
         }
 
         composable(Screen.Shopping.route) {
-            ShoppingScreen(
-                navController     = navController,
-            )
-
+            ShoppingScreen(navController = navController)
         }
+
         composable(Screen.Fridge.route) {
             FridgeScreen(
-                navController     = navController,
+                navController = navController,
+                viewModel = fridgeViewModel // 여기도 전달해줘야 함
             )
-
         }
     }
 }
-//
