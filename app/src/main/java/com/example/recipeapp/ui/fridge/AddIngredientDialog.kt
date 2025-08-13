@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.text.SimpleDateFormat
 import java.util.Locale
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddIngredientDialog(
@@ -63,6 +64,11 @@ fun AddIngredientDialog(
     var expiryDay by remember { mutableStateOf("") }
     var memo by remember { mutableStateOf("") }
 
+    // [ADD] 단위 상태 (기본: 개) — 구조 변경 없이 UI/저장만 보강
+    val unitOptions = listOf("개", "g", "ml", "컵", "스푼")       // [ADD]
+    var unit by remember { mutableStateOf("개") }                  // [ADD]
+    var unitExpanded by remember { mutableStateOf(false) }        // [ADD]
+
     var expanded by remember { mutableStateOf(false) }
     val filteredOptions = allIngredients.filter {
         it.contains(name, ignoreCase = true)
@@ -74,7 +80,9 @@ fun AddIngredientDialog(
             Button(onClick = {
                 val expiry = "${expiryYear.padStart(4, '0')}-${expiryMonth.padStart(2, '0')}-${expiryDay.padStart(2, '0')}"
                 val countInt = count.toIntOrNull() ?: 1
-                onAdd(name, countInt, expiry, memo)
+                // [ADD] 단위 태그만 이름에 부착 (DB/모델 변경 없음)
+                val nameWithUnit = if (unit == "개") name.trim() else "${name.trim()} [$unit]" // [ADD]
+                onAdd(nameWithUnit, countInt, expiry, memo) // [CHANGE] name → nameWithUnit
             }) {
                 Text("추가")
             }
@@ -102,7 +110,7 @@ fun AddIngredientDialog(
                         singleLine = true,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor() // 필요 시 추가
+                            .menuAnchor() // 필요 시 유지 (경고 무시 가능)
                     )
 
                     ExposedDropdownMenu(
@@ -130,6 +138,39 @@ fun AddIngredientDialog(
                     label = { Text("수량") },
                     singleLine = true
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // [ADD] 단위 선택 드롭다운 — 기존 UI 흐름 유지, 바로 아래에만 한 블록 추가
+                ExposedDropdownMenuBox(                                // [ADD]
+                    expanded = unitExpanded,                           // [ADD]
+                    onExpandedChange = { unitExpanded = !unitExpanded } // [ADD]
+                ) {                                                     // [ADD]
+                    TextField(                                         // [ADD]
+                        value = unit,                                  // [ADD]
+                        onValueChange = {},                            // [ADD]
+                        readOnly = true,                               // [ADD]
+                        label = { Text("단위") },                        // [ADD]
+                        singleLine = true,                             // [ADD]
+                        modifier = Modifier                            // [ADD]
+                            .fillMaxWidth()                            // [ADD]
+                            .menuAnchor()                              // [ADD]
+                    )                                                  // [ADD]
+                    ExposedDropdownMenu(                               // [ADD]
+                        expanded = unitExpanded,                       // [ADD]
+                        onDismissRequest = { unitExpanded = false }    // [ADD]
+                    ) {                                                // [ADD]
+                        unitOptions.forEach { opt ->                   // [ADD]
+                            DropdownMenuItem(                          // [ADD]
+                                text = { Text(opt) },                  // [ADD]
+                                onClick = {                            // [ADD]
+                                    unit = opt                         // [ADD]
+                                    unitExpanded = false               // [ADD]
+                                }                                      // [ADD]
+                            )                                          // [ADD]
+                        }                                              // [ADD]
+                    }                                                  // [ADD]
+                }                                                      // [ADD]
 
                 Spacer(modifier = Modifier.height(8.dp))
 
