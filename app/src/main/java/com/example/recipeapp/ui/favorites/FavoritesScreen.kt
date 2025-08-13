@@ -1,26 +1,36 @@
 package com.example.recipeapp.ui.favorites
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import com.example.recipeapp.ui.components.TopBar
-
+import com.example.recipeapp.data.RecipeSamples
+import com.example.recipeapp.data.FavoritesStore
+import com.example.recipeapp.ui.ingredients.RecipeCard
+import androidx.compose.ui.unit.dp
 @Composable
 fun FavoritesScreen(
-
     navController: NavHostController
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    val favoriteIds by FavoritesStore.ids.collectAsState()
+    val favoriteRecipes = remember(favoriteIds) {
+        RecipeSamples.sampleRecipes.filter { favoriteIds.contains(it.id) }
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
         TopBar(navController)
 
-        Text(
-            text = "즐겨찾기",
-            modifier = Modifier.align(Alignment.Center)
-        )
+        LazyColumn {
+            items(favoriteRecipes) { recipe ->
+                RecipeCard(
+                    recipe = recipe,
+                    isFavorite = true,
+                    onToggleFavorite = { FavoritesStore.toggle(recipe.id) }
+                )
+            }
+        }
     }
 }
-/* 해야될꺼 일단 레시피 화면 구현 레시피 화면에서 토글 버튼이랑 연동*/

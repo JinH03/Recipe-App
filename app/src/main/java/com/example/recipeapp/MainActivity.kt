@@ -11,6 +11,7 @@ import com.example.recipeapp.ui.fridge.FridgeViewModel
 import com.example.recipeapp.ui.fridge.FridgeViewModelFactory
 import com.example.recipeapp.ui.navigation.RecipeNavGraph
 import com.example.recipeapp.ui.theme.MyApplicationTheme
+import com.example.recipeapp.data.FavoritesStore
 
 class MainActivity : ComponentActivity() {
 
@@ -23,6 +24,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FavoritesStore.init(applicationContext)
         setContent {
             MyApplicationTheme {
                 val navController = rememberNavController()
